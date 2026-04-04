@@ -1,0 +1,107 @@
+version: '3.8'
+
+services:
+  db-us:
+    image: postgres:13
+    environment:
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
+      POSTGRES_DB: ${DB_NAME:-incidents}
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-postgres} -d ${DB_NAME:-incidents}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  region-us:
+    build: ./app
+    ports:
+      - "8081:8080"
+    environment:
+      REGION_ID: us
+      PORT: 8080
+      DB_USER: ${DB_USER:-postgres}
+      DB_PASSWORD: ${DB_PASSWORD:-postgres}
+      DB_HOST: db-us
+      DB_NAME: ${DB_NAME:-incidents}
+      OTHER_REGIONS: http://region-eu:8080,http://region-apac:8080
+    depends_on:
+      db-us:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:8080/incidents"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  db-eu:
+    image: postgres:13
+    environment:
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
+      POSTGRES_DB: ${DB_NAME:-incidents}
+    ports:
+      - "5433:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-postgres} -d ${DB_NAME:-incidents}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  region-eu:
+    build: ./app
+    ports:
+      - "8082:8080"
+    environment:
+      REGION_ID: eu
+      PORT: 8080
+      DB_USER: ${DB_USER:-postgres}
+      DB_PASSWORD: ${DB_PASSWORD:-postgres}
+      DB_HOST: db-eu
+      DB_NAME: ${DB_NAME:-incidents}
+      OTHER_REGIONS: http://region-us:8080,http://region-apac:8080
+    depends_on:
+      db-eu:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:8080/incidents"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  db-apac:
+    image: postgres:13
+    environment:
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
+      POSTGRES_DB: ${DB_NAME:-incidents}
+    ports:
+      - "5434:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-postgres} -d ${DB_NAME:-incidents}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  region-apac:
+    build: ./app
+    ports:
+      - "8083:8080"
+    environment:
+      REGION_ID: apac
+      PORT: 8080
+      DB_USER: ${DB_USER:-postgres}
+      DB_PASSWORD: ${DB_PASSWORD:-postgres}
+      DB_HOST: db-apac
+      DB_NAME: ${DB_NAME:-incidents}
+      OTHER_REGIONS: http://region-us:8080,http://region-eu:8080
+    depends_on:
+      db-apac:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:8080/incidents"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
