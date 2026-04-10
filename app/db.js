@@ -21,6 +21,7 @@ const initDB = async () => {
       version_conflict BOOLEAN NOT NULL DEFAULT false,
       updated_at TIMESTAMP NOT NULL DEFAULT NOW()
     );
+    
   `);
 };
 
